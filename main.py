@@ -1,24 +1,58 @@
+from agents import Agent, Runner
+from connection import config
 import os
-from agents import AsyncOpenAI,RunConfig,OpenAIChatCompletionsModel
-from dotenv import load_dotenv
 
-load_dotenv()
-gemini_api_key = os.getenv('GEMINI_API_KEY')
-if not gemini_api_key:
-    raise ValueError('❌ GEMINI_API_KEY is not found')
+# define individual translator agent
 
-external_client = AsyncOpenAI(
-    api_key=gemini_api_key,
-    base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
+urdu_agent = Agent(
+    name='Urdu agent',
+    instructions='translate any English text into Urdu.',
+    
 )
 
-model = OpenAIChatCompletionsModel(
-    model="gemini-2.0-flash",
-    openai_client=external_client
+italian_agent = Agent(
+    name='Italian agent',
+    instructions='translate any english  text into Italian..'
+
 )
 
-config = RunConfig(
-    model=model,
-    model_provider=external_client,
-    tracing_disabled=True
+arabic_Agent = Agent(
+    name='Arabic agent',
+    instructions='translate any english text into Arabic.'
 )
+
+# define a main agent that will use the individual translator agents
+main_agent = Agent(
+    name='Translator Router',
+    instructions="""
+You are a translator router agent. Your task is to route the translation request to the appropriate translator agent based on the language specified in the input.
+You have three translator agents: Urdu agent, Italian agent, and Arabic agent. Each agent is specialized in translating English text into a specific language.
+When you receive a translation request, you should determine
+the language specified in the input and route the request to the appropriate translator agent.
+""",
+    tools=[
+        # convert this agent into as a  tool so that it can be used in the main agent
+         urdu_agent.as_tool(
+             tool_name='translate_to_urdu',
+             tool_description='Translate the user input into Urdu.'
+         ),
+         italian_agent.as_tool(
+             tool_name='translate_to_italian',
+             tool_description='Translate the user input into Italian.'
+         ),
+         arabic_Agent.as_tool(
+             tool_name='translate_to_arabic',
+             tool_description='Translate the user input into Arabic.'
+         )
+    ]
+)
+
+# run the main agent with the input and config
+res = Runner.run_sync(
+    arabic_Agent,
+    input='translate this text into Arabic: Hello, how are you?',
+    run_config=config
+    
+)
+# print the result
+print(res.final_output)

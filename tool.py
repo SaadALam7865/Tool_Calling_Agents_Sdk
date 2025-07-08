@@ -25,7 +25,7 @@ agent = Agent(name='personal assistant',
 # run the agent with the input and config
 res = Runner.run_sync(
     agent,
-    input='what is the weather in karachi?',
+    input='what are the currnten weather in Indonesia  Jakarta?',
     run_config=config
     
 )
